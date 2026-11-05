@@ -54,7 +54,8 @@ class Config:
 
 def gpu_configs(ncpu):
     """the configurations swept on a machine with a gpu. the reference is the
-    first one: gpu, batch 1, everything off."""
+    first one: gpu, batch 1, everything off. the cpu thread sweep lives in
+    cpu_configs, because a colab vm has two cores and nothing to sweep."""
     cs = [
         Config("ref"),
         Config("b8", batch=8),
@@ -65,11 +66,6 @@ def gpu_configs(ncpu):
         Config("benchmark", cudnn_benchmark=True),
         Config("cudnn_det", cudnn_deterministic=True),
         Config("det", deterministic=True),
-        Config("cpu_t1", device="cpu", threads=1),
-    ]
-    if ncpu >= 4:
-        cs.append(Config("cpu_t4", device="cpu", threads=4))
-    cs += [
         Config("b128_tf32", batch=128, tf32=True),
         Config("b128_benchmark", batch=128, cudnn_benchmark=True),
         Config("b128_cudnn_det", batch=128, cudnn_deterministic=True),

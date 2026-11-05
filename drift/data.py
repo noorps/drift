@@ -6,7 +6,7 @@ import torch
 
 ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 CIFAR_MEAN = (0.4914, 0.4822, 0.4465)
-CIFAR_STD = (0.2470, 0.2435, 0.2616)
+CIFAR_STD = (0.2023, 0.1994, 0.2010)   # the normalisation the committed weights were trained with
 CIFAR_CLASSES = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"]
 
 AG_URL = "https://raw.githubusercontent.com/mhjabreel/CharCnn_Keras/master/data/ag_news_csv/{}.csv"

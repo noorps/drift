@@ -6,6 +6,7 @@ cd "$(dirname "$0")"
 LABEL="${1:-$(date +%Y%m%d-%H%M)}"
 PY="${PYTHON:-python3}"
 MODELS="${MODELS:-resnet,text}"
+[ -f weights/transformer_agnews.pt ] || MODELS="${MODELS/,text/}"   # no text weights yet: resnet only
 echo "== results/$LABEL"
 $PY -m drift.run --label "$LABEL" --models "$MODELS" --depth-n "${DEPTH_N:-64}"
 $PY -m drift.plots "$LABEL"
