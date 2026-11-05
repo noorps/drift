@@ -175,6 +175,10 @@ def main(label):
         res = analyze_model(label, model, cfgset)
         with open(os.path.join(outdir, f"compare_{model}.json"), "w") as f:
             json.dump(res, f, indent=0)
+        dpath = os.path.join(outdir, f"depth_{model}.json")
+        if not os.path.isdir(os.path.join(outdir, ".depth_tmp", model)) and os.path.exists(dpath):
+            print(model, "pairs", len(res["pairs"]), "(depth json kept, no dumps present)", flush=True)
+            continue
         depth = {"model": model, "pairs": [], "not_run": []}
         for base, other in configs.depth_pairs(cfgset):
             d = depth_stats(label, model, base, other)
@@ -182,7 +186,7 @@ def main(label):
                 depth["pairs"].append(d)
             else:
                 depth["not_run"].append([base, other])
-        with open(os.path.join(outdir, f"depth_{model}.json"), "w") as f:
+        with open(dpath, "w") as f:
             json.dump(depth, f, indent=1)
         print(model, "pairs", len(res["pairs"]), "depth pairs", len(depth["pairs"]), flush=True)
 
