@@ -2,3 +2,5 @@ torch>=2.2
 torchvision>=0.17
 numpy
 matplotlib
+pyarrow
+pillow

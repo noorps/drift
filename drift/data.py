@@ -23,44 +23,66 @@ def sha256(path):
     return h.hexdigest()
 
 
+CIFAR_PARQUET = "https://huggingface.co/datasets/uoft-cs/cifar10/resolve/0b2714987fa478483af9968de7c934580d0bb9a2/plain_text/{}-00000-of-00001.parquet"
+CIFAR_PARQUET_SHA = {"test": "841389e6f2d64f28bf17310e430aebac20ec3ba611a3c5e231dc93c645ce84de",
+                     "train": "8428b53a88a11ac374111006708df51469e315a22ac6d66470afd9c78d2ae883"}
+
+
+def _cifar_raw(split):
+    """uint8 [n,32,32,3] and labels, from a pinned parquet copy of the original
+    cifar-10 (same order as the original python pickles; the first ten test
+    labels are 3 8 8 0 6 6 1 6 3 1). falls back to torchvision's download of
+    the original archive, which is the same bytes but a slow server."""
+    os.makedirs(ROOT, exist_ok=True)
+    cache = os.path.join(ROOT, f"cifar10_{split}_uint8.npy")
+    if os.path.exists(cache):
+        d = np.load(os.path.join(ROOT, f"cifar10_{split}_labels.npy"))
+        return np.load(cache), d
+    p = os.path.join(ROOT, f"cifar10_{split}.parquet")
+    try:
+        if not os.path.exists(p) or sha256(p) != CIFAR_PARQUET_SHA[split]:
+            urllib.request.urlretrieve(CIFAR_PARQUET.format(split), p)
+        assert sha256(p) == CIFAR_PARQUET_SHA[split], "parquet checksum mismatch"
+        import io, pyarrow.parquet as pq
+        from PIL import Image
+        t = pq.read_table(p).to_pydict()
+        arr = np.stack([np.array(Image.open(io.BytesIO(d["bytes"])).convert("RGB")) for d in t["img"]])
+        labels = np.array(t["label"], dtype=np.int64)
+    except Exception as e:
+        print("parquet copy unavailable (", repr(e), "), using torchvision's download")
+        import torchvision
+        ds = torchvision.datasets.CIFAR10(ROOT, train=(split == "train"), download=True)
+        arr, labels = ds.data, np.array(ds.targets, dtype=np.int64)
+    np.save(cache, arr); np.save(os.path.join(ROOT, f"cifar10_{split}_labels.npy"), labels)
+    return arr, labels
+
+
+def _normalise(arr):
+    x = torch.from_numpy(arr).permute(0, 3, 1, 2).float() / 255.0
+    x = (x - torch.tensor(CIFAR_MEAN).view(1, 3, 1, 1)) / torch.tensor(CIFAR_STD).view(1, 3, 1, 1)
+    return x.contiguous()
+
+
 def cifar_test():
     """returns (x [10000,3,32,32] float32 normalised, y [10000] int64)"""
-    os.makedirs(ROOT, exist_ok=True)
     cache = os.path.join(ROOT, "cifar10_test.pt")
     if os.path.exists(cache):
         d = torch.load(cache)
         return d["x"], d["y"]
-    import torchvision
-    ds = torchvision.datasets.CIFAR10(ROOT, train=False, download=True)
-    x = torch.from_numpy(ds.data).permute(0, 3, 1, 2).float() / 255.0
-    x = (x - torch.tensor(CIFAR_MEAN).view(1, 3, 1, 1)) / torch.tensor(CIFAR_STD).view(1, 3, 1, 1)
-    x = x.contiguous()
-    y = torch.tensor(ds.targets, dtype=torch.int64)
+    arr, labels = _cifar_raw("test")
+    x, y = _normalise(arr), torch.from_numpy(labels)
     torch.save({"x": x, "y": y}, cache)
     return x, y
 
 
 def cifar_test_images():
     """raw uint8 [10000,32,32,3] for saving flipped images"""
-    cache = os.path.join(ROOT, "cifar10_test_uint8.npy")
-    if os.path.exists(cache):
-        return np.load(cache)
-    import torchvision
-    ds = torchvision.datasets.CIFAR10(ROOT, train=False, download=True)
-    np.save(cache, ds.data)
-    return ds.data
+    return _cifar_raw("test")[0]
 
 
 def cifar_train():
-    cache = os.path.join(ROOT, "cifar10_train.pt")
-    if os.path.exists(cache):
-        d = torch.load(cache)
-        return d["x"], d["y"]
-    import torchvision
-    ds = torchvision.datasets.CIFAR10(ROOT, train=True, download=True)
-    x = torch.from_numpy(ds.data).permute(0, 3, 1, 2).float() / 255.0
-    x = (x - torch.tensor(CIFAR_MEAN).view(1, 3, 1, 1)) / torch.tensor(CIFAR_STD).view(1, 3, 1, 1)
-    return x.contiguous(), torch.tensor(ds.targets, dtype=torch.int64)
+    arr, labels = _cifar_raw("train")
+    return _normalise(arr), torch.from_numpy(labels)
 
 
 _tok = re.compile(r"[a-z0-9]+|[^\sa-z0-9]")
