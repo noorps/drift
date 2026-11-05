@@ -11,7 +11,10 @@ def slim_pair(p):
             "flips_in_lowest_5pct": p["flip"]["flips_in_lowest_5pct"],
             "flipped": [{k: r[k] for k in ("index", "label", "base_pred", "other_pred", "margin", "margin_pct", "bucket")}
                         for r in p["flip"]["flipped"]],
-            "wall_s": p["wall_s"], "accuracy": p["accuracy"]}
+            "wall_s": p["wall_s"], "accuracy": p["accuracy"],
+            "min_margin": p["flip"].get("min_margin"), "closest": p["flip"].get("closest", []),
+            "nearest_miss_ratio": p["flip"].get("nearest_miss_ratio"),
+            "n_within_10pct": p["flip"].get("n_within_10pct"), "n_within_1pct": p["flip"].get("n_within_1pct")}
 
 
 def main(label, web="web"):

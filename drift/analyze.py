@@ -58,8 +58,19 @@ def flip_analysis(a, b, y, names):
                       "margin_pct": float(rank[i] / len(margin)), "bucket": BUCKET_NAMES[int(bucket[i])],
                       "base_correct": bool(pa[i] == y[i]), "other_correct": bool(pb[i] == y[i])})
     items.sort(key=lambda r: r["margin"])
+    # how close did it come: per image, the disagreement as a fraction of the margin
+    diff = np.abs(a.astype(np.float64) - b.astype(np.float64)).max(1)
+    ratio = diff / np.maximum(margin, 1e-30)
+    second = np.argsort(a, axis=1)[:, -2]
+    top = np.argsort(-ratio)[:24]
+    closest = [{"index": int(i), "label": names[int(y[i])], "pred": names[int(pa[i])], "runner_up": names[int(second[i])],
+                "margin": float(margin[i]), "diff": float(diff[i]), "ratio": float(ratio[i]),
+                "margin_pct": float(rank[i] / len(margin))} for i in top]
     return {"edges": [float(e) for e in edges], "buckets": rows, "flipped": items,
-            "flips_in_lowest_5pct": int(sum(1 for r in items if r["margin_pct"] < 0.05))}
+            "flips_in_lowest_5pct": int(sum(1 for r in items if r["margin_pct"] < 0.05)),
+            "min_margin": float(margin.min()), "closest": closest,
+            "nearest_miss_ratio": float(ratio.max()),
+            "n_within_10pct": int((ratio > 0.1).sum()), "n_within_1pct": int((ratio > 0.01).sum())}
 
 
 def load_logits(label, model, name):
