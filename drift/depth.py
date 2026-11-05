@@ -32,7 +32,7 @@ def hook_all(m, store):
         def hook(mod, inp, out):
             c = calls.get(name, 0); calls[name] = c + 1
             # keep batch-first outputs only (the positional embedding table is not one)
-            if torch.is_tensor(out) and torch.is_tensor(inp[0]) and out.shape[:1] == inp[0].shape[:1] and out.dim() >= 2:
+            if torch.is_tensor(out) and torch.is_tensor(inp[0]) and inp[0].dim() >= 2 and out.dim() >= 2 and out.shape[0] == inp[0].shape[0]:
                 store.append((name, c, out.detach().clone().cpu()))
         return hook
     for name, mod in leaf_or_block:
