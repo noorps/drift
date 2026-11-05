@@ -1,0 +1,41 @@
+{
+ "model": "tiny_transformer_agnews",
+ "seed": 0,
+ "epochs": 3,
+ "batch": 64,
+ "device": "cpu",
+ "optimizer": "adamw lr 1e-3 wd 0.01 onecycle",
+ "epoch_log": [
+  {
+   "epoch": 1,
+   "train_loss": 0.5503933811386427,
+   "test_acc": 0.886578947368421,
+   "elapsed_s": 583.2844486236572
+  },
+  {
+   "epoch": 2,
+   "train_loss": 0.2506535194476445,
+   "test_acc": 0.9028947368421053,
+   "elapsed_s": 1156.1906971931458
+  },
+  {
+   "epoch": 3,
+   "train_loss": 0.18216140344142914,
+   "test_acc": 0.9067105263157895,
+   "elapsed_s": 4714.971982240677
+  }
+ ],
+ "test_acc": 0.9067105263157895,
+ "train_s": 4714.972090244293,
+ "sha256": "257ffeeba2ca9ad0aa840d914dab4452c508f49120f2b8ed4959b930e0208ef6",
+ "env": {
+  "python": "3.13.12",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+  "cpu_count": 12,
+  "torch": "2.15.0+cpu",
+  "torchvision": "0.29.2+cpu",
+  "torch_threads_default": 10,
+  "cuda_available": false
+ }
+}
