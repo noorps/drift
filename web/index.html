@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>drift</title>
+<meta name="description" content="run the same neural network on the same photo twice and you can get two different answers. i counted how often, on 10,000 photos.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body><main>
+  <p class="crumb"><a href="/">purnoor sharma</a> <span>/</span> drift</p>
+  <h1>drift</h1>
+  <p class="sub">when two runs of the same neural network stop agreeing, and whether it changes the answer.</p>
+
+  <div class="plain">
+    <p>run the same model on the same photo twice and you can get two different answers.</p>
+    <p>computers store decimals approximately, so adding up a million numbers gives a slightly different total depending on the order you add them in. a gpu splits that work across thousands of cores that finish in whatever order they finish, so the order is never quite the same twice. a neural network stacks hundreds of those sums on top of each other, and the differences add up.</p>
+    <p>usually nobody notices, because it is a rounding error. what i wanted to know is whether it ever gets big enough to change the model's actual answer. if it is 99% sure a photo is a cat, no. if it is torn between cat and dog, maybe.</p>
+    <p>so i ran 10,000 photos through the same model with different settings and counted.</p>
+    <p class="headline" id="headline"></p>
+  </div>
+
+  <h2>pick two ways of running it</h2>
+  <p class="lead">every run below is the same trained model on the same 10,000 photos. only the settings change. pick a setting on each side and the page looks up what i measured for that pair.</p>
+  <div class="runs">
+    <div class="run" id="run-a"><h3>run a</h3></div>
+    <div class="run" id="run-b"><h3>run b</h3></div>
+  </div>
+  <p class="status" id="status"></p>
+
+  <figure>
+    <div class="chart" id="depth-chart"></div>
+    <figcaption id="depth-cap"></figcaption>
+  </figure>
+
+  <p class="verdict" id="verdict"></p>
+  <p class="why" id="why"></p>
+
+  <figure id="grid-wrap">
+    <div class="grid" id="grid"></div>
+    <figcaption id="grid-cap"></figcaption>
+  </figure>
+
+  <h2>the details</h2>
+  <div class="details" id="details"></div>
+  <p class="foot">numbers from <a id="repo" href="https://github.com/noorps/drift">github.com/noorps/drift</a>, results folder <code id="label"></code>. nothing on this page is interpolated; if a pair is missing it was not run.</p>
+</main>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body></html>
