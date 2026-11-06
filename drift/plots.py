@@ -2,8 +2,10 @@
 a colour-vision check on the site's #FAF8F1 background."""
 import json, os
 import numpy as np
+import logging
 import matplotlib
 matplotlib.use("Agg")
+logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
 import matplotlib.pyplot as plt
 
 BG, PANEL, TEXT, MUTED, RULE = "#FAF8F1", "#F2F0E4", "#2B2E28", "#6E7566", "#E7E2D4"
