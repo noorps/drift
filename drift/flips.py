@@ -18,6 +18,8 @@ def main(label, web_dir=None):
     for p in cmp["pairs"]:
         for r in p["flip"]["flipped"]:
             idxs.add(r["index"])
+        for r in p["flip"].get("closest", []):
+            idxs.add(r["index"])
     for i in sorted(idxs):
         Image.fromarray(imgs[i]).save(os.path.join(out, f"{i}.png"))
     for p in cmp["pairs"]:

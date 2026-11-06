@@ -175,7 +175,7 @@
     if (f === 0) {
       v.innerHTML = `<span class="big">0</span> of ${fmt(n)} photos got a different answer.`;
       $("why").textContent = s.identical_images === n ? "the scores were identical to the last bit for every photo." :
-        `the scores matched to the last bit for ${fmt(s.identical_images)} of them; the rest differed by at most ${sci(s.abs_max)} and never enough to change the answer.`;
+        `the scores matched to the last bit for ${fmt(s.identical_images)} of them; the rest differed by at most ${sci(s.abs_max)}, and the closest call in the whole set was still ${p.min_margin !== undefined ? sci(p.min_margin) : "far"} apart.`;
     } else {
       v.innerHTML = `of ${fmt(n)} photos, <span class="big">${f}</span> got a different answer, and ${low} of those were in the closest-call 5%.`;
       const bk = p.buckets;
@@ -184,18 +184,25 @@
         `largest change in any photo's scores: ${sci(s.abs_max)}.`;
     }
     const items = p.flipped, base = p.base === a ? "a" : "b", other = base === "a" ? "b" : "a";
-    const shown = showAll ? items : items.slice(0, 24);
+    const closest = p.closest || [];
+    const list = items.length ? items : closest;
+    const shown = showAll ? list : list.slice(0, 24);
     for (const r of shown) {
       const c = document.createElement("div"); c.className = "cell";
-      c.innerHTML = `<img src="img/${r.index}.png" width="32" height="32" alt="cifar-10 test image ${r.index}, labelled ${r.label}">` +
-        `${base}: <b>${r.base_pred}</b><br>${other}: <b>${r.other_pred}</b><br><span class="m">margin ${r.margin.toFixed(2)} · is a ${r.label}</span>`;
+      c.innerHTML = items.length
+        ? `<img src="img/${r.index}.png" width="32" height="32" alt="cifar-10 test image ${r.index}, labelled ${r.label}">` +
+          `${base}: <b>${r.base_pred}</b><br>${other}: <b>${r.other_pred}</b><br><span class="m">margin ${r.margin.toFixed(2)} · is a ${r.label}</span>`
+        : `<img src="img/${r.index}.png" width="32" height="32" alt="cifar-10 test image ${r.index}, labelled ${r.label}">` +
+          `<b>${r.pred}</b> over ${r.runner_up}<br><span class="m">margin ${r.margin.toFixed(3)}<br>moved ${sci(r.diff)} · is a ${r.label}</span>`;
       grid.appendChild(c);
     }
-    $("grid-wrap").style.display = items.length ? "" : "none";
-    if (items.length) {
-      $("grid-cap").textContent = `the ${items.length} photos that got a different answer, closest calls first. margin = how far ahead the winning class was in run ${base}; the whole set's median is ${M.margin_edges ? sci(M.margin_edges[2]) + " at the 25% mark" : ""}.`;
-      if (items.length > 24 && !showAll) {
-        const m = document.createElement("button"); m.className = "more"; m.type = "button"; m.textContent = "show all " + items.length;
+    $("grid-wrap").style.display = list.length ? "" : "none";
+    if (list.length) {
+      $("grid-cap").textContent = items.length
+        ? `the ${items.length} photos that got a different answer, closest calls first. margin = how far ahead the winning class was in run ${base}.`
+        : `no photo flipped, so these are the ${closest.length} nearest misses: the photos where the two runs' disagreement was largest relative to how far ahead the winner was. the closest one moved ${(100 * p.nearest_miss_ratio).toFixed(3)}% of the way to flipping.`;
+      if (list.length > 24 && !showAll) {
+        const m = document.createElement("button"); m.className = "more"; m.type = "button"; m.textContent = "show all " + list.length;
         m.addEventListener("click", () => { showAll = true; render(); }); $("grid-cap").appendChild(document.createElement("br")); $("grid-cap").appendChild(m);
       }
     }
@@ -217,7 +224,9 @@
   }
 
   const af = M.any_flip || { n: 0, in_lowest_5pct: 0 };
-  $("headline").textContent = `${af.n} of ${fmt(M.n)} photos came out with a different answer, and ${af.in_lowest_5pct} of those were ones the model was already unsure about.`;
+  $("headline").textContent = af.n
+    ? `${af.n} of ${fmt(M.n)} photos came out with a different answer, and ${af.in_lowest_5pct} of those were ones the model was already unsure about.`
+    : `0 of ${fmt(M.n)} photos came out with a different answer, under any setting i tried. the numbers behind the answers did change, for almost every photo, but never by enough to matter.`;
   $("label").textContent = D.label;
   renderDetails();
   render();
