@@ -124,8 +124,8 @@ def analyze_model(label, model, cfgset):
     ref = L("ref")
     if ref is not None:
         m = margin_of(ref)
-        out["reference"] = {"margin": [round(float(v), 6) for v in m],
-                            "pred": ref.argmax(1).tolist(), "label": y.tolist(),
+        out["reference"] = {"margin": [round(float(v), 4) for v in m],
+                            "pred": ref.argmax(1).tolist(),
                             "accuracy": float((ref.argmax(1) == y).mean())}
         anyflip = np.zeros(len(y), dtype=bool)
         for p in out["pairs"]:

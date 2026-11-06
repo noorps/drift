@@ -4,9 +4,9 @@ regenerable parts (logits, flip images, charts) into base64 chunks, and unpack.
     python -m drift.pack pack results/<label>     -> results/<label>.b64/chunk_000.txt ...
     python -m drift.pack unpack <dir of chunks> results/
 """
-import base64, io, os, sys, tarfile
+import base64, hashlib, io, os, sys, tarfile
 
-CHUNK = 48000
+CHUNK = 20000
 SKIP = ("logits", "flips", ".depth_tmp")
 
 
@@ -29,6 +29,8 @@ def pack(src):
             f.write(b[i:i + CHUNK])
         n += 1
     print(f"{len(buf.getvalue())} bytes gz, {len(b)} chars b64, {n} chunks in {out}")
+    with open(os.path.join(out, "sha256.txt"), "w") as f:
+        f.write(hashlib.sha256(buf.getvalue()).hexdigest())
     return out, n
 
 
@@ -36,6 +38,9 @@ def unpack(chunkdir, dest):
     files = sorted(f for f in os.listdir(chunkdir) if f.startswith("chunk_"))
     b = "".join(open(os.path.join(chunkdir, f)).read().strip() for f in files)
     raw = base64.b64decode(b)
+    want = os.path.join(chunkdir, "sha256.txt")
+    if os.path.exists(want):
+        assert hashlib.sha256(raw).hexdigest() == open(want).read().strip(), "checksum mismatch"
     with tarfile.open(fileobj=io.BytesIO(raw), mode="r:gz") as tf:
         tf.extractall(dest)
     print("unpacked", len(raw), "bytes into", dest)
