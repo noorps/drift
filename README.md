@@ -24,6 +24,14 @@ batch size and `cudnn.benchmark` moved the logits more than anything else: both 
 
 none of it reaches the decision. the largest disagreement any knob produced is orders of magnitude smaller than the smallest gap between the top two logits in the test set, so there is nothing for it to flip. through the network's depth, relative error grows only modestly from the first layer to the last, while absolute error grows several times over as activations get larger.
 
+## inference backends
+
+a second stage (`serve_stage2.py`) runs the same trained resnet18 through the backends you would actually deploy on: eager pytorch, `torch.compile` and tensorrt, at fp32 and fp16, at batch 1, 8, 32 and 128. each one is diffed against eager fp32 at the same batch size, so the comparison isolates the backend rather than the batch. the measured tables are in [`results/t4/serve_summary.md`](results/t4/serve_summary.md).
+
+fp16 is where flips finally appear. its disagreement with fp32 is larger than the smallest top-two margin in the test set, and a handful of the 10,000 images change their answer, all near-ties, so accuracy does not drop. every fp32 path, compiled or through tensorrt, stays orders of magnitude under the margin and changes nothing.
+
+no backend is fastest everywhere. tensorrt wins at batch 1 and holds its memory flat as the batch grows, but by batch 128 it is the slowest option measured, while `torch.compile` with fp16 is the fastest. the tensorrt fp16 rows came out bitwise identical to tensorrt fp32, which means the fp16 kernels were not selected, and the script flags that rather than reporting it as an fp16 result.
+
 ## what to actually do about it
 
 - do not chase bitwise reproducibility across batch sizes, devices or cudnn's autotuner. the forward pass of a trained network is not the same computation at batch 1 and batch 32, and no flag makes it so. compare models and predictions with a tolerance, and pick the tolerance from a measurement like this one rather than from a feeling.
@@ -47,7 +55,7 @@ bash run.sh <label>          # results/<label>/: json, charts, summary.md
 
 - one model family for the headline (resnet18), one dataset (cifar-10), one gpu (a colab t4, turing). the transformer is small and trained for three epochs on a laptop; it is a second opinion, not a second study.
 - the t4 cannot test tf32 at all. the row is there so the code path is exercised; the number says nothing about ampere.
-- no training, no distributed, no mixed precision beyond the tf32 flag, no quantisation. the knobs that move logits by 1e-2 rather than 1e-5 are all on that list.
+- no training, no distributed, no quantisation, and reduced precision only as fp16 in the backends stage. int8 is the obvious next run: turing has int8 tensor cores, and it should flip far more than fp16 does.
 - margins here are wide because the model is good. a 70% model on a harder set would put more images near zero margin, and the flip rate would stop being zero. the method applies; the headline does not transfer.
 - the per-layer curves use 64 inputs, chosen with a fixed seed, not the whole test set.
 - the cpu runs use whatever cores the colab vm has (two), so the thread-count knob is 1 against 2, and the laptop this was built on was too throttled to add a 4-thread row in time.
