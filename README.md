@@ -2,9 +2,7 @@
 
 run the same neural network on the same input twice and you can get different numbers. run it on a cpu instead of a gpu, or with 32 images in a batch instead of 1, and you reliably do. this repo measures when two runs of the same model stop agreeing, how far apart they get layer by layer, and whether it ever changes the prediction. the model is resnet18 on the cifar-10 test set (all 10,000 images), with a small transformer on ag news as a second opinion. every number below comes from a run whose json sits beside it in `results/`; nothing is typed in by hand.
 
-![divergence by layer](results/LABEL/depth.png)
-
-<!-- HEADLINE -->
+the short answer, on a t4: no knob changed a single prediction. not one of the 10,000 images or 7,600 texts came out with a different top-1 class under any configuration, even though several knobs changed every image's logits.
 
 ## what is measured
 
@@ -20,17 +18,15 @@ one trained model, one fixed reference run, and one knob changed at a time:
 
 for every pair: max and median absolute difference in the logits, relative difference (per image, `||a - b|| / ||a||`), how many images came out bitwise identical, how many changed their top-1 class, and where the changed ones sit in the reference run's margin distribution (the margin is the gap between the top two logits). forward hooks on every leaf module record the per-layer absolute and relative difference for a subset of inputs. wall-clock per configuration is recorded so the cost of each knob is visible.
 
-## results
-
-<!-- RESULTS -->
-
 ## what the numbers say
 
-<!-- SAY -->
+batch size and `cudnn.benchmark` moved the logits more than anything else: both change which kernels run, so every image's logits shift, by a few parts in a million relative to their size. cpu against gpu moves them by less than that. the tf32 flags do nothing on a t4, which has no tf32 units. `cudnn.deterministic` and `use_deterministic_algorithms` came out bitwise identical to the defaults and cost a few percent of wall-clock. the same configuration run twice, in one process or two, was bitwise identical every time.
+
+none of it reaches the decision. the largest disagreement any knob produced is orders of magnitude smaller than the smallest gap between the top two logits in the test set, so there is nothing for it to flip. through the network's depth, relative error grows only modestly from the first layer to the last, while absolute error grows several times over as activations get larger.
 
 ## what to actually do about it
 
-- do not chase bitwise reproducibility across batch sizes, devices or cudnn's autotuner. the forward pass of a trained network is not the same computation at batch 1 and batch 32, and no flag makes it so. compare models and predictions with a tolerance, and pick the tolerance from a measurement like the tables above rather than from a feeling.
+- do not chase bitwise reproducibility across batch sizes, devices or cudnn's autotuner. the forward pass of a trained network is not the same computation at batch 1 and batch 32, and no flag makes it so. compare models and predictions with a tolerance, and pick the tolerance from a measurement like this one rather than from a feeling.
 - if you need the same bits from the same configuration twice, you already have it: the default kernels at a fixed shape were bitwise repeatable here, in the same process and across processes. `torch.use_deterministic_algorithms(True)` buys you nothing in that setting and costs a little; it earns its keep for ops with atomics (scatter, index_add, some backward kernels), which an inference-only resnet does not touch.
 - if you do turn determinism on, measure what it costs on your shapes. here it was a few percent of wall-clock, not the 2x people warn about, because resnet18's convolutions already run deterministic cudnn kernels.
 - set `torch.backends.cudnn.benchmark` to the same value in every run you intend to compare, and keep the comparison on one device. those two knobs moved the logits more than anything else.
