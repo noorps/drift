@@ -88,15 +88,16 @@ def _trt_via_onnx(eager, example, half):
         return None, ""
     path = "/tmp/drift_resnet.onnx"
     torch.onnx.export(eager, example, path, input_names=["x"], output_names=["logits"],
-                      dynamic_axes={"x": {0: "b"}, "logits": {0: "b"}}, opset_version=17)
+                      dynamic_axes={"x": {0: "b"}, "logits": {0: "b"}}, opset_version=18)
     logger = trt.Logger(trt.Logger.WARNING)
     builder = trt.Builder(logger)
     network = builder.create_network()
     parser = trt.OnnxParser(network, logger)
-    with open(path, "rb") as f:
-        if not parser.parse(f.read()):
-            raise RuntimeError("onnx parse failed: " +
-                               "; ".join(str(parser.get_error(i)) for i in range(parser.num_errors)))
+    # parse from the path, not the bytes: newer exporters write the weights to a
+    # .onnx.data file beside the graph, and only a path lets the parser find it.
+    if not parser.parse_from_file(path):
+        raise RuntimeError("onnx parse failed: " +
+                           "; ".join(str(parser.get_error(i)) for i in range(parser.num_errors)))
     cfg = builder.create_builder_config()
     if half:
         cfg.set_flag(trt.BuilderFlag.FP16)
