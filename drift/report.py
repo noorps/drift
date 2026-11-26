@@ -75,6 +75,77 @@ def headline(cmp):
             f"and {a['in_lowest_5pct']} of those were in the lowest-margin 5%.")
 
 
+def serve_tables(rec):
+    """the inference backends tables, from serve.json written by serve_stage2.py."""
+    ok = [(k, int(bs), c) for k, b in rec["backends"].items() for bs, c in b["batches"].items() if "error" not in c]
+    speed = ["| backend | batch | p50 ms | p99 ms | img/s | build s | peak mb | accuracy |",
+             "|---|---:|---:|---:|---:|---:|---:|---:|"]
+    for k, b in rec["backends"].items():
+        for bs, c in b["batches"].items():
+            if "error" in c:
+                speed.append(f"| {k} | {bs} | failed: {c['error'][:60]} | | | | | |")
+                continue
+            l = c["latency_ms"]
+            speed.append(f"| {k} | {bs} | {l['p50']:.3f} | {l['p99']:.3f} | {c['throughput_img_s']:,.0f} | "
+                         f"{c['build_s']:.1f} | {c['peak_alloc_mb']:.0f} | {100 * c['accuracy']:.2f}% |")
+
+    cmp = rec["comparisons"]
+    num = ["| backend | batch | max abs | max rel | bitwise identical | flips | headroom | accuracy change |",
+           "|---|---:|---:|---:|---:|---:|---:|---:|"]
+    for c in cmp:
+        s = c["stats"]
+        num.append(f"| {c['backend']} | {c['batch']} | {f(s['abs_max'])} | {f(s['rel_max'])} | "
+                   f"{s['identical_images']:,} / {s['n']:,} | {c['flips']} | {f(c['headroom'])} | "
+                   f"{100 * c['accuracy_delta']:+.2f} pts |")
+
+    tol = ["| backend | atol | rtol |", "|---|---:|---:|"]
+    for k in dict.fromkeys(c["backend"] for c in cmp):
+        cs = [c for c in cmp if c["backend"] == k]
+        tol.append(f"| {k} | {f(max(c['tolerance_needed']['abs'] for c in cs))} | "
+                   f"{f(max(c['tolerance_needed']['rel'] for c in cs))} |")
+
+    notes = [f"- {n}" for n in rec.get("notes", [])]
+    chk = rec.get("stage1_baseline_check", {})
+    if "reproduces_stage1" in chk:
+        notes.append(f"- eager fp32 at batch 1 reproduced stage 1's reference logits bitwise on "
+                     f"{chk['bitwise_identical_images']:,} of {chk['n']:,} images"
+                     + ("" if chk["reproduces_stage1"] else f" (max abs difference {f(chk['abs_max'])})"))
+    elif chk:
+        notes.append(f"- stage 1 baseline check skipped: {chk.get('skipped', '')}")
+
+    # one generated sentence per finding, so the prose around the tables carries no typed numbers
+    head = []
+    by = {}
+    for k, bs, c in ok:
+        by.setdefault(bs, []).append((k, c))
+    lo, hi = min(by), max(by)
+    if len(by[lo]) > 1:
+        fast = min(by[lo], key=lambda t: t[1]["latency_ms"]["p50"])
+        base = dict(by[lo]).get("eager_fp32")
+        if base:
+            head.append(f"at batch {lo} the fastest backend was {fast[0]}, {fast[1]['latency_ms']['p50']:.3f} ms p50 "
+                        f"against eager fp32's {base['latency_ms']['p50']:.3f} ms "
+                        f"({base['latency_ms']['p50'] / fast[1]['latency_ms']['p50']:.1f}x).")
+    if hi != lo and len(by[hi]) > 1:
+        r = sorted(by[hi], key=lambda t: -t[1]["throughput_img_s"])
+        head.append(f"at batch {hi} the fastest was {r[0][0]} at {r[0][1]['throughput_img_s']:,.0f} img/s "
+                    f"and the slowest {r[-1][0]} at {r[-1][1]['throughput_img_s']:,.0f} img/s.")
+    if cmp:
+        worst = max(cmp, key=lambda c: c["flips"])
+        fp32 = [c for c in cmp if c["backend"].endswith("fp32")]
+        if worst["flips"]:
+            head.append(f"the most predictions any backend changed was {worst['flips']} of {rec['n']:,} "
+                        f"({worst['backend']} at batch {worst['batch']}).")
+        else:
+            head.append(f"no backend changed a single one of the {rec['n']:,} predictions.")
+        if fp32:
+            m = max(fp32, key=lambda c: c["headroom"])
+            head.append(f"the largest fp32 disagreement reached {f(m['headroom'])} of the margin it would need to "
+                        f"cross, and fp32 flipped {sum(c['flips'] for c in fp32)} predictions in total.")
+    return {"serve_speed": "\n".join(speed), "serve_numerics": "\n".join(num), "serve_tolerance": "\n".join(tol),
+            "serve_notes": "\n".join(notes), "serve_headline": " ".join(head)}
+
+
 def tables(label):
     d = os.path.join("results", label)
     run = json.load(open(os.path.join(d, "run.json")))
@@ -92,6 +163,9 @@ def tables(label):
         dp = os.path.join(d, f"depth_{model}.json")
         if os.path.exists(dp):
             t[f"depth_{model}"] = depth_table(json.load(open(dp)), cmp)
+    sp = os.path.join(d, "serve.json")
+    if os.path.exists(sp):
+        t.update(serve_tables(json.load(open(sp))))
     return t
 
 
