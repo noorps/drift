@@ -3,3 +3,7 @@ __pycache__/
 data/
 .depth_tmp/
 *.zip
+results/*/logits/
+results/*/flips/
+results/*/*.log
+results/*.b64/

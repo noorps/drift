@@ -1,0 +1,480 @@
+{
+ "label": "t4",
+ "env": {
+  "python": "3.13.16",
+  "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+  "cpu": "Intel(R) Xeon(R) CPU @ 2.00GHz",
+  "cpu_count": 2,
+  "torch": "2.14.1+cu130",
+  "torchvision": "0.29.1+cu130",
+  "torch_threads_default": 1,
+  "cuda_available": true,
+  "cifar10_test_sha256": "f9b1e2130bab680db56eb06d886f7f1ad0f1183907ceff4659d1735c890f5b04",
+  "gpu": "Tesla T4",
+  "gpu_sm": "7.5",
+  "cuda": "13.0",
+  "cudnn": 92800,
+  "driver": "580.82.07"
+ },
+ "configs": [
+  {
+   "name": "ref",
+   "device": "cuda",
+   "batch": 1,
+   "tf32": false,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": false,
+   "deterministic": false,
+   "threads": 0,
+   "words": "gpu, batch 1, tf32 off"
+  },
+  {
+   "name": "b8",
+   "device": "cuda",
+   "batch": 8,
+   "tf32": false,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": false,
+   "deterministic": false,
+   "threads": 0,
+   "words": "gpu, batch 8, tf32 off"
+  },
+  {
+   "name": "b32",
+   "device": "cuda",
+   "batch": 32,
+   "tf32": false,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": false,
+   "deterministic": false,
+   "threads": 0,
+   "words": "gpu, batch 32, tf32 off"
+  },
+  {
+   "name": "b128",
+   "device": "cuda",
+   "batch": 128,
+   "tf32": false,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": false,
+   "deterministic": false,
+   "threads": 0,
+   "words": "gpu, batch 128, tf32 off"
+  },
+  {
+   "name": "cpu",
+   "device": "cpu",
+   "batch": 1,
+   "tf32": false,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": false,
+   "deterministic": false,
+   "threads": 0,
+   "words": "cpu, batch 1"
+  },
+  {
+   "name": "tf32",
+   "device": "cuda",
+   "batch": 1,
+   "tf32": true,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": false,
+   "deterministic": false,
+   "threads": 0,
+   "words": "gpu, batch 1, tf32 on"
+  },
+  {
+   "name": "benchmark",
+   "device": "cuda",
+   "batch": 1,
+   "tf32": false,
+   "cudnn_benchmark": true,
+   "cudnn_deterministic": false,
+   "deterministic": false,
+   "threads": 0,
+   "words": "gpu, batch 1, tf32 off, cudnn autotune"
+  },
+  {
+   "name": "cudnn_det",
+   "device": "cuda",
+   "batch": 1,
+   "tf32": false,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": true,
+   "deterministic": false,
+   "threads": 0,
+   "words": "gpu, batch 1, tf32 off, cudnn deterministic"
+  },
+  {
+   "name": "det",
+   "device": "cuda",
+   "batch": 1,
+   "tf32": false,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": false,
+   "deterministic": true,
+   "threads": 0,
+   "words": "gpu, batch 1, tf32 off, deterministic mode"
+  },
+  {
+   "name": "b128_tf32",
+   "device": "cuda",
+   "batch": 128,
+   "tf32": true,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": false,
+   "deterministic": false,
+   "threads": 0,
+   "words": "gpu, batch 128, tf32 on"
+  },
+  {
+   "name": "b128_benchmark",
+   "device": "cuda",
+   "batch": 128,
+   "tf32": false,
+   "cudnn_benchmark": true,
+   "cudnn_deterministic": false,
+   "deterministic": false,
+   "threads": 0,
+   "words": "gpu, batch 128, tf32 off, cudnn autotune"
+  },
+  {
+   "name": "b128_cudnn_det",
+   "device": "cuda",
+   "batch": 128,
+   "tf32": false,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": true,
+   "deterministic": false,
+   "threads": 0,
+   "words": "gpu, batch 128, tf32 off, cudnn deterministic"
+  },
+  {
+   "name": "b128_det",
+   "device": "cuda",
+   "batch": 128,
+   "tf32": false,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": false,
+   "deterministic": true,
+   "threads": 0,
+   "words": "gpu, batch 128, tf32 off, deterministic mode"
+  }
+ ],
+ "steps": [
+  {
+   "step": "sweep",
+   "model": "resnet",
+   "config": "ref",
+   "rc": 0,
+   "s": 65.37171196937561
+  },
+  {
+   "step": "sweep",
+   "model": "resnet",
+   "config": "ref_proc",
+   "rc": 0,
+   "s": 33.29111170768738
+  },
+  {
+   "step": "sweep",
+   "model": "resnet",
+   "config": "b8",
+   "rc": 0,
+   "s": 10.34001612663269
+  },
+  {
+   "step": "sweep",
+   "model": "resnet",
+   "config": "b32",
+   "rc": 0,
+   "s": 8.229331493377686
+  },
+  {
+   "step": "sweep",
+   "model": "resnet",
+   "config": "b128",
+   "rc": 0,
+   "s": 10.595860242843628
+  },
+  {
+   "step": "sweep",
+   "model": "resnet",
+   "config": "b128_proc",
+   "rc": 0,
+   "s": 7.7748870849609375
+  },
+  {
+   "step": "sweep",
+   "model": "resnet",
+   "config": "cpu",
+   "rc": 0,
+   "s": 219.7219877243042
+  },
+  {
+   "step": "sweep",
+   "model": "resnet",
+   "config": "tf32",
+   "rc": 0,
+   "s": 33.49816298484802
+  },
+  {
+   "step": "sweep",
+   "model": "resnet",
+   "config": "benchmark",
+   "rc": 0,
+   "s": 31.295374155044556
+  },
+  {
+   "step": "sweep",
+   "model": "resnet",
+   "config": "cudnn_det",
+   "rc": 0,
+   "s": 33.60225772857666
+  },
+  {
+   "step": "sweep",
+   "model": "resnet",
+   "config": "det",
+   "rc": 0,
+   "s": 35.55787706375122
+  },
+  {
+   "step": "sweep",
+   "model": "resnet",
+   "config": "b128_tf32",
+   "rc": 0,
+   "s": 8.427925825119019
+  },
+  {
+   "step": "sweep",
+   "model": "resnet",
+   "config": "b128_benchmark",
+   "rc": 0,
+   "s": 7.700267553329468
+  },
+  {
+   "step": "sweep",
+   "model": "resnet",
+   "config": "b128_cudnn_det",
+   "rc": 0,
+   "s": 7.760087490081787
+  },
+  {
+   "step": "sweep",
+   "model": "resnet",
+   "config": "b128_det",
+   "rc": 0,
+   "s": 8.619961977005005
+  },
+  {
+   "step": "depth",
+   "model": "resnet",
+   "config": "b128",
+   "rc": 0,
+   "s": 8.284031867980957
+  },
+  {
+   "step": "depth",
+   "model": "resnet",
+   "config": "b32",
+   "rc": 0,
+   "s": 8.383143186569214
+  },
+  {
+   "step": "depth",
+   "model": "resnet",
+   "config": "benchmark",
+   "rc": 0,
+   "s": 10.23035717010498
+  },
+  {
+   "step": "depth",
+   "model": "resnet",
+   "config": "cpu",
+   "rc": 0,
+   "s": 10.011035680770874
+  },
+  {
+   "step": "depth",
+   "model": "resnet",
+   "config": "det",
+   "rc": 0,
+   "s": 7.722114324569702
+  },
+  {
+   "step": "depth",
+   "model": "resnet",
+   "config": "ref",
+   "rc": 0,
+   "s": 8.408419132232666
+  },
+  {
+   "step": "depth",
+   "model": "resnet",
+   "config": "tf32",
+   "rc": 0,
+   "s": 7.919552803039551
+  },
+  {
+   "step": "sweep",
+   "model": "text",
+   "config": "ref",
+   "rc": 0,
+   "s": 34.32560348510742
+  },
+  {
+   "step": "sweep",
+   "model": "text",
+   "config": "ref_proc",
+   "rc": 0,
+   "s": 18.373122692108154
+  },
+  {
+   "step": "sweep",
+   "model": "text",
+   "config": "b8",
+   "rc": 0,
+   "s": 6.220010995864868
+  },
+  {
+   "step": "sweep",
+   "model": "text",
+   "config": "b32",
+   "rc": 0,
+   "s": 5.600017786026001
+  },
+  {
+   "step": "sweep",
+   "model": "text",
+   "config": "b128",
+   "rc": 0,
+   "s": 4.937647342681885
+  },
+  {
+   "step": "sweep",
+   "model": "text",
+   "config": "b128_proc",
+   "rc": 0,
+   "s": 4.7197160720825195
+  },
+  {
+   "step": "sweep",
+   "model": "text",
+   "config": "cpu",
+   "rc": 0,
+   "s": 20.10553002357483
+  },
+  {
+   "step": "sweep",
+   "model": "text",
+   "config": "tf32",
+   "rc": 0,
+   "s": 17.26766276359558
+  },
+  {
+   "step": "sweep",
+   "model": "text",
+   "config": "benchmark",
+   "rc": 0,
+   "s": 18.39629030227661
+  },
+  {
+   "step": "sweep",
+   "model": "text",
+   "config": "cudnn_det",
+   "rc": 0,
+   "s": 16.930061101913452
+  },
+  {
+   "step": "sweep",
+   "model": "text",
+   "config": "det",
+   "rc": 0,
+   "s": 19.335999488830566
+  },
+  {
+   "step": "sweep",
+   "model": "text",
+   "config": "b128_tf32",
+   "rc": 0,
+   "s": 5.558080434799194
+  },
+  {
+   "step": "sweep",
+   "model": "text",
+   "config": "b128_benchmark",
+   "rc": 0,
+   "s": 4.700762510299683
+  },
+  {
+   "step": "sweep",
+   "model": "text",
+   "config": "b128_cudnn_det",
+   "rc": 0,
+   "s": 5.580151319503784
+  },
+  {
+   "step": "sweep",
+   "model": "text",
+   "config": "b128_det",
+   "rc": 0,
+   "s": 4.759928941726685
+  },
+  {
+   "step": "depth",
+   "model": "text",
+   "config": "b128",
+   "rc": 0,
+   "s": 4.256983995437622
+  },
+  {
+   "step": "depth",
+   "model": "text",
+   "config": "b32",
+   "rc": 0,
+   "s": 5.566200256347656
+  },
+  {
+   "step": "depth",
+   "model": "text",
+   "config": "benchmark",
+   "rc": 0,
+   "s": 4.419576406478882
+  },
+  {
+   "step": "depth",
+   "model": "text",
+   "config": "cpu",
+   "rc": 0,
+   "s": 3.9033970832824707
+  },
+  {
+   "step": "depth",
+   "model": "text",
+   "config": "det",
+   "rc": 0,
+   "s": 5.4247448444366455
+  },
+  {
+   "step": "depth",
+   "model": "text",
+   "config": "ref",
+   "rc": 0,
+   "s": 4.439486026763916
+  },
+  {
+   "step": "depth",
+   "model": "text",
+   "config": "tf32",
+   "rc": 0,
+   "s": 4.819717168807983
+  },
+  {
+   "step": "analyze",
+   "rc": 0,
+   "s": 33.437703371047974
+  }
+ ],
+ "total_s": 835.8238697052002
+}
