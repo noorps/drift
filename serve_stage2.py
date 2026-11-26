@@ -86,8 +86,24 @@ def _trt_via_onnx(eager, example, half):
         import tensorrt as trt
     except Exception:
         return None, ""
-    path = "/tmp/drift_resnet.onnx"
-    torch.onnx.export(eager, example, path, input_names=["x"], output_names=["logits"],
+    # newer tensorrt builds strongly typed networks and has no fp16 builder flag; there the
+    # precision has to come from the graph itself, so export a half copy with casts at the edges.
+    typed = half and not hasattr(trt.BuilderFlag, "FP16")
+    model = eager
+    if typed:
+        import copy
+
+        class Half(torch.nn.Module):
+            def __init__(self, m):
+                super().__init__()
+                self.m = copy.deepcopy(m).half()
+
+            def forward(self, x):
+                return self.m(x.half()).float()
+
+        model = Half(eager).eval()
+    path = "/tmp/drift_resnet_fp16.onnx" if half else "/tmp/drift_resnet.onnx"
+    torch.onnx.export(model, example, path, input_names=["x"], output_names=["logits"],
                       dynamic_axes={"x": {0: "b"}, "logits": {0: "b"}}, opset_version=18)
     logger = trt.Logger(trt.Logger.WARNING)
     builder = trt.Builder(logger)
@@ -99,7 +115,7 @@ def _trt_via_onnx(eager, example, half):
         raise RuntimeError("onnx parse failed: " +
                            "; ".join(str(parser.get_error(i)) for i in range(parser.num_errors)))
     cfg = builder.create_builder_config()
-    if half:
+    if half and not typed:
         cfg.set_flag(trt.BuilderFlag.FP16)
     profile = builder.create_optimization_profile()
     s = tuple(example.shape)
@@ -122,7 +138,7 @@ def _trt_via_onnx(eager, example, half):
         torch.cuda.current_stream().synchronize()
         return out
 
-    return fn, "onnx + tensorrt python api"
+    return fn, "onnx + tensorrt python api" + (", fp16 weights in the graph" if typed else "")
 
 
 # ---------------------------------------------------------------- measurement
